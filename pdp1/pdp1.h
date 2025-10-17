@@ -209,6 +209,15 @@ char *handlecmd(PDP1 *pdp, char *line);
 void typtelnet(int port, int fd);
 
 void initaudio(void);
+int isAudioInitialized(void);
 void stopaudio(void);
+void startaudio(void);
+void continueaudio(void);
 void svc_audio(PDP1 *pdp);
+void setFilterAlpha(float);
+float getFilterAlpha(void);
+void setMixerGain(float);
+float getMixerGain(void);
+void setAudioTuning(float);
+float getAudioTuning(void);
 extern int doaudio;

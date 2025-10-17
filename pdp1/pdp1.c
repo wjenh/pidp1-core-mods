@@ -3,6 +3,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#define NOTIOTH
+#include "dynamicIots.h"
+
 // PDP-1D but probably also on some C's?
 #define LAILIA
 
@@ -620,6 +623,7 @@ cycle0(PDP1 *pdp)
 {
 	int hack = pdp->cychack;
 	pdp->cychack = 0;
+
 	switch(hack) {
 	default:
 	// TP0
@@ -646,6 +650,7 @@ cycle0(PDP1 *pdp)
 	}
 #endif
 	pdp->emc = 0;
+
 	TP(1)
 
 	// TP2
@@ -701,6 +706,9 @@ cycle0(PDP1 *pdp)
 		if((MB & B5) && !pdp->ioh && !pdp->ihs) pdp->ioh = 1;
 		if(pdp->ioc) iot(pdp, 0);
 	}
+
+    dynamicIotProcessorDoPoll(pdp);         // process now so IOTs can clear ioh if needed
+
 	TP(7)
 
 	// TP8
@@ -789,6 +797,7 @@ static void
 defer(PDP1 *pdp)
 {
 	int sbs_restore = 0;
+    int mask = 0;
 
 	// TP0
 	mb_to_ma(pdp);
@@ -803,9 +812,11 @@ defer(PDP1 *pdp)
 	if(pdp->sbm && IR_JMP && pdp->epc == 0) {
 		if(pdp->sbs16) {
 			if((MB & 07703) == 1) {
-				pdp->b4 &= ~(1<<((MB&074)>>2));
-				pdp->exd = 1;
-				sbs_restore = 1;
+				mask = ~(1<<((MB&074)>>2));
+				pdp->b4 &= mask;
+				pdp->b3 &= mask;   // wje
+                pdp->exd = 1;
+                sbs_restore = 1;
 			}
 		} else {
 			if((MB & 07777) == 1) {
@@ -1058,11 +1069,13 @@ brkcycle(PDP1 *pdp)
 	if(IR_SHRO && (MB & B12)) shro(pdp);
 	if(pdp->bc == 1 && pdp->sbs16) {
 		int be = 0;
+
 		for(int r = pdp->req; !(r&1); r >>= 1)
 			be++;
 		MA |= be<<2;
 	}
-	if(pdp->bc == 2 || pdp->bc == 3) pc_to_ma(pdp);
+	if(pdp->bc == 2 || pdp->bc == 3)
+        pc_to_ma(pdp);
 	TP(0)
 
 	// TP1
@@ -1143,6 +1156,7 @@ cycle(PDP1 *pdp)
 //	assert(!pdp->df1 || pdp->bc==0);
 
 	pdp->timernd = rand() % TP_unreachable;
+
 	// a cycle takes 5μs
 	if(pdp->bc) brkcycle(pdp);
 	else if(!pdp->cyc) cycle0(pdp);
@@ -1315,7 +1329,8 @@ iot_pulse(PDP1 *pdp, int pulse, int dev, int nac)
 		break;
 
 	default:
-		printf("unknown IOT %06o\n", MB);
+        if( !dynamicIotProcessor(pdp, dev, pulse, nac) )
+            printf("unknown IOT %06o\n", MB);
 		break;
 	}
 }
@@ -1337,6 +1352,13 @@ req(PDP1 *pdp, int chan)
 		pdp->b2 |= pdp->b1 & (1<<chan);
 	else
 		pdp->b2 = 1;
+}
+
+// Let the dynamic IOT code trigger a break
+void
+dynamicReq(PDP1 *pdp, int chan)
+{
+    req(pdp, chan);
 }
 
 void
@@ -1700,21 +1722,58 @@ handlecmd(PDP1 *pdp, char *line)
 				else if(strcmp(args[1], "off") == 0 ||
 				   strcmp(args[1], "0") == 0)
 					pdp->muldiv_sw = 0;
+                resp[0] = '\0';
 			} else
 				pdp->muldiv_sw = !pdp->muldiv_sw;
 			sprintf(resp, "mul-div now %s", pdp->muldiv_sw ? "on" : "off");
 		}
 		else if(strcmp(args[0], "audio") == 0) {
+            resp[0] = '\0';
 			if(args[1]) {
 				if(strcmp(args[1], "on") == 0 ||
 				   strcmp(args[1], "1") == 0)
 					doaudio = 1;
 				else if(strcmp(args[1], "off") == 0 ||
 				   strcmp(args[1], "0") == 0)
-					doaudio = 0;
-			} else
-				doaudio = !doaudio;
-			sprintf(resp, "audio now %s", doaudio ? "on" : "off");
+                {
+                    doaudio = 0;
+                }
+                else if( strcmp(args[1], "query") == 0 )
+                {
+                    sprintf(resp,"Audio %s, current alpha %f, current gain %f, current tuning %f\n",
+                        doaudio?"on":"off", getFilterAlpha(), getMixerGain(), getAudioTuning());
+                }
+				else if(strcmp(args[1], "alpha") == 0 )
+                {
+                    setFilterAlpha(atof(args[2]));
+                }
+				else if(strcmp(args[1], "gain") == 0 )
+                {
+                    setMixerGain(atof(args[2]));
+                }
+				else if(strcmp(args[1], "tuning") == 0 )
+                {
+                    setAudioTuning(atof(args[2]));
+                }
+			} else {
+                    doaudio = !doaudio;
+                }
+
+            if( doaudio )
+            {
+                if( isAudioInitialized() )
+                    continueaudio();
+                else
+                {
+                    initaudio();
+                    startaudio();
+                }
+            }
+            else
+                stopaudio();
+
+            if( !resp[0] )
+                sprintf(resp, "audio now %s", doaudio ? "on" : "off");
 		}
 	}
 

@@ -2,6 +2,9 @@
 #include "pdp1.h"
 #include "args.h"
 
+#define NOTIOTH
+#include "dynamicIots.h"
+
 #include <fcntl.h>
 #include <unistd.h>
 #include <pthread.h>
@@ -20,6 +23,7 @@ Panel *getpanel(void);
 #define Edge(sw) (pdp->sw && !prev_##sw)
 
 int doaudio;
+PDP1 *visiblePDP1P;          // dynamic IOTS need this, but can't get it otherwise
 
 void
 emu(PDP1 *pdp, Panel *panel)
@@ -27,7 +31,6 @@ emu(PDP1 *pdp, Panel *panel)
 	pdp->panel = panel;
 
 	pwrclr(pdp);
-	initaudio();
 
 	bool prev_start_sw;
 	bool prev_stop_sw;
@@ -58,6 +61,7 @@ emu(PDP1 *pdp, Panel *panel)
 				spec(pdp);
 				cycle(pdp);
 			}
+
 			if(Edge(stop_sw)) pdp->run_enable = 0;
 			if(Edge(readin_sw)) start_readin(pdp);
 
@@ -73,21 +77,20 @@ emu(PDP1 *pdp, Panel *panel)
 				}
 			}
 
-			if(pdp->run) {	// not really correct
-				if(doaudio)
-					svc_audio(pdp);
-				else
-					stopaudio();
-				cycle(pdp);
-			 } else {
-				stopaudio();
-				updatelights(pdp, panel);
+			if(pdp->run) {
+                if(doaudio)
+                    svc_audio(pdp);
+               dynamicIotProcessorStart();
+               cycle(pdp);
+            } else {
+               dynamicIotProcessorStop();
+               updatelights(pdp, panel);
 			}
 			throttle(pdp);
 			handleio(pdp);
 			pdp->simtime += 5000;
-		} else {
-			stopaudio();
+        } else {
+            stopaudio();
 			pwrclr(pdp);
 
 			/* magic key combo used for shutdown */
@@ -270,6 +273,7 @@ int
 main(int argc, char *argv[])
 {
 	PDP1 pdp1, *pdp = &pdp1;
+    visiblePDP1P = pdp;
 	pthread_t th;
 	const char *host;
 	int port;
