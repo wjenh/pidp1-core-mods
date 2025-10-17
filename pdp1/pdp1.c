@@ -624,6 +624,8 @@ cycle0(PDP1 *pdp)
 	int hack = pdp->cychack;
 	pdp->cychack = 0;
 
+    dynamicIotProcessorDoPoll(pdp);
+
 	switch(hack) {
 	default:
 	// TP0
@@ -706,8 +708,6 @@ cycle0(PDP1 *pdp)
 		if((MB & B5) && !pdp->ioh && !pdp->ihs) pdp->ioh = 1;
 		if(pdp->ioc) iot(pdp, 0);
 	}
-
-    dynamicIotProcessorDoPoll(pdp);         // process now so IOTs can clear ioh if needed
 
 	TP(7)
 
@@ -1279,6 +1279,7 @@ iot_pulse(PDP1 *pdp, int pulse, int dev, int nac)
 			IO |= !pdp->punon<<13;
 			// ..
 			IO |= pdp->sbm<<11;
+            IO |= pdp->cksflags;        // needed to generalize use, many devices use it
 		}
 		break;
 

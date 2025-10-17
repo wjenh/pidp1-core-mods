@@ -147,6 +147,9 @@ struct PDP1
 	// spacewar controllers
 	int spcwar1;
 	int spcwar2;
+    
+    // extra flags for cks
+    int cksflags;
 };
 
 #define IR pdp->ir

@@ -245,4 +245,6 @@ char fname[256];
         stopped = 0;
         entryP->startP();
     }
+
+    return( entryP );
 }
