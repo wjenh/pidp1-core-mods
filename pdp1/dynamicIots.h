@@ -56,6 +56,8 @@ typedef struct pollEntry
 {
     struct pollEntry *nextP;         // we link all polls in a chain
     IotEntryP iotEntryP;            // the definition for a given IOT
+    int numCycles;                  // if not 0, how many cycles between calls
+    int curCount;                   // cycles since last entry call
 } PollEntry, *PollEntryP;
 
 // Similarly, set a reference back to the IotEntry for an IOT

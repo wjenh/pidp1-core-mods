@@ -624,8 +624,6 @@ cycle0(PDP1 *pdp)
 	int hack = pdp->cychack;
 	pdp->cychack = 0;
 
-    dynamicIotProcessorDoPoll(pdp);
-
 	switch(hack) {
 	default:
 	// TP0
@@ -708,6 +706,8 @@ cycle0(PDP1 *pdp)
 		if((MB & B5) && !pdp->ioh && !pdp->ihs) pdp->ioh = 1;
 		if(pdp->ioc) iot(pdp, 0);
 	}
+
+    dynamicIotProcessorDoPoll(pdp);
 
 	TP(7)
 

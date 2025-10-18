@@ -146,13 +146,17 @@ PollEntryP pollItemP;
         return;             // nothing to do
     }
 
-    // go thru the chain calling any that is enabled
+    // go thru the chain calling any that is enabled and has reached its cycle count
     for( pollItemP = pollList; pollItemP; pollItemP = pollItemP->nextP )
     {
         entryP = pollItemP-> iotEntryP;
         if( entryP->pollEnabled )
         {
-            entryP->pollP(pdp1P);
+            if( ++(pollItemP->curCount) >= entryP->pollEnabled )
+            {
+                pollItemP->curCount = 0;
+                entryP->pollP(pdp1P);
+            }
         }
     }
 }
