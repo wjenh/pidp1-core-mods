@@ -706,9 +706,6 @@ cycle0(PDP1 *pdp)
 		if((MB & B5) && !pdp->ioh && !pdp->ihs) pdp->ioh = 1;
 		if(pdp->ioc) iot(pdp, 0);
 	}
-
-    dynamicIotProcessorDoPoll(pdp);
-
 	TP(7)
 
 	// TP8
@@ -1162,6 +1159,8 @@ cycle(PDP1 *pdp)
 	else if(!pdp->cyc) cycle0(pdp);
 	else if(pdp->df1) defer(pdp);
 	else cycle1(pdp);
+    // update any IOTs regardless of cycle type
+    dynamicIotProcessorDoPoll(pdp);
 }
 
 void
