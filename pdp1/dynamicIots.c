@@ -218,12 +218,6 @@ char fname[256];
     }
 
     // Should be implemented, but if not, ignore
-    IotSeqBreakHandlerP breakP = (IotSeqBreakHandlerP)dlsym(entryP->dlHandleP, "_setBreakCallback");
-    if( breakP )
-    {
-        breakP(dynamicIotProcessBreak);         // set the callback in the handler
-    }
-
     IotControlBlockSetterP setterP = (IotControlBlockSetterP)dlsym(entryP->dlHandleP, "_setIotControlBlock");
     if( setterP )
     {

@@ -46,11 +46,13 @@ updatelights(PDP1 *pdp, Panel *panel)
 		indicators |= pdp->ihs<<8;
 		indicators |= pdp->ios<<7;
 		indicators |= pdp->ioh<<6;
+		indicators |= pdp->hsc<<6;
 	} else {
 		indicators |= pdp->run<<9;
 		indicators |= pdp->cyc<<8;
 		indicators |= pdp->df1<<7;
 		indicators |= pdp->rim<<6;
+		indicators |= pdp->hsc<<6;
 	}
 	indicators |= (0x8>>panel->sel1) << 10;
 	indicators |= (0x8>>panel->sel2) << 14;

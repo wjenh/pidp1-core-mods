@@ -62,6 +62,7 @@ struct PDP1
 	int ihs;
 	int ios;
 	int ioh;
+    int hsc;        // wje - add hsc light control, drum uses it
 
 	// extensions
 	int lai, lia;

@@ -4,6 +4,7 @@
 
 #define NOTIOTH
 #include "dynamicIots.h"
+#include "highSpeedChannels.h"
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -78,9 +79,17 @@ emu(PDP1 *pdp, Panel *panel)
 			}
 
 			if(pdp->run) {
-                if(doaudio)
+               if(doaudio)
                     svc_audio(pdp);
                dynamicIotProcessorStart();
+
+               // A dma transfer steals a cycle, so eat one unless no tranfer happened or NOSTEAL was in effect
+               if( processHSChannels(pdp) )
+               {
+                   pdp->simtime += 5000;
+                   throttle(pdp);
+               }
+
                cycle(pdp);
             } else {
                dynamicIotProcessorStop();
