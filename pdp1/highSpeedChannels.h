@@ -13,7 +13,7 @@
 #define HSC_MODE_FROMMEM       001
 #define HSC_MODE_TOMEM         002
 #define HSC_MODE_IMMEDIATE     004
-#define HSC_MODE_NOSTEAL       010
+#define HSC_MODE_STEAL         010
 
 typedef struct _HSC_ {
     int status;         // one of the HSC_status codes above

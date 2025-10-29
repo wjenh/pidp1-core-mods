@@ -27,7 +27,7 @@ static void processImmediate(PDP1 *pdp1P, int mode, int count, int memBank, int 
     Word *toBufferP, Word *fromBufferP);
 
 // Service routine called from run loop. Question - did the hardware pause on a halt, or complete?
-// Returns 0 if it took no action, 1 if it did a 'memory cycle'.
+// Returns 0 if it took no action, 1 if it did a 'memory cycle' and we are in steal mode.
 int
 processHSChannels(PDP1 *pdp1P)
 {
@@ -40,7 +40,7 @@ HSC_ControlP controlP;
         if( controlP->status == HSC_BUSY )
         {
             processChannel(pdp1P, controlP);
-            return( !(controlP->mode & HSC_MODE_NOSTEAL) );        // we processed one, maybe steal, maybe not
+            return( !!(controlP->mode & HSC_MODE_STEAL) );        // we processed one, maybe steal, maybe not
         }
     }
 

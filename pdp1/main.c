@@ -83,8 +83,9 @@ emu(PDP1 *pdp, Panel *panel)
                     svc_audio(pdp);
                dynamicIotProcessorStart();
 
-               // A dma transfer steals a cycle, so eat one unless no tranfer happened or NOSTEAL was in effect
-               if( processHSChannels(pdp) )
+               // A dma transfer can be in STEAL mode, in which case it effectively halts the processor
+               // and transfers all of its requested words at 5us/word. We fake this by just not cycling.
+               while( processHSChannels(pdp) )
                {
                    pdp->simtime += 5000;
                    throttle(pdp);
