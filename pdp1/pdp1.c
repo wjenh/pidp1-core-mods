@@ -716,6 +716,7 @@ cycle0(PDP1 *pdp)
 	}
 	if(IR_SKIP) {
 		int skip = 0;
+		if((MB & B6) && IO) skip = 1;       // wje - pdp-1D sni, skip on nonzero IO
 		if((MB & B7) && !(IO&B0)) skip = 1;
 		if((MB & B8) && !pdp->ov1) skip = 1;
 		if((MB & B9) && (AC&B0)) skip = 1;
@@ -729,6 +730,7 @@ cycle0(PDP1 *pdp)
 	if(IR_SHRO && (MB & B16)) shro(pdp);
 	if(IR_LAW) AC |= MB & 0007777;
 	if(IR_OPR) {
+        if(MB & B5) IO = ~IO;           // wje - pdp-1D cmi, complement IO
 		if(MB & B7) AC |= pdp->tw;
 		if(MB & B11) pc_to_ac(pdp);
 #ifdef LAILIA
@@ -811,7 +813,7 @@ defer(PDP1 *pdp)
 			if((MB & 07703) == 1) {
 				mask = ~(1<<((MB&074)>>2));
 				pdp->b4 &= mask;
-				pdp->b3 &= mask;   // wje
+				pdp->b3 &= mask;   // wje fix sbs16 not clearing
                 pdp->exd = 1;
                 sbs_restore = 1;
 			}
@@ -1160,7 +1162,7 @@ cycle(PDP1 *pdp)
 	else if(pdp->df1) defer(pdp);
 	else cycle1(pdp);
     // update any IOTs regardless of cycle type
-    dynamicIotProcessorDoPoll(pdp);
+    dynamicIotProcessorDoPoll(pdp);             // wje - handle pseudo-async IOTs
 }
 
 void
@@ -1329,7 +1331,7 @@ iot_pulse(PDP1 *pdp, int pulse, int dev, int nac)
 		break;
 
 	default:
-        if( !dynamicIotProcessor(pdp, dev, pulse, nac) )
+        if( !dynamicIotProcessor(pdp, dev, pulse, nac) )        // wje - see if there is a dynamic IOT to handle this
             printf("unknown IOT %06o\n", MB);
 		break;
 	}
@@ -1358,7 +1360,7 @@ req(PDP1 *pdp, int chan)
 void
 dynamicReq(PDP1 *pdp, int chan)
 {
-    req(pdp, chan);
+    req(pdp, chan);             // wje - because req() is private
 }
 
 void
